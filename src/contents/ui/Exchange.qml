@@ -7,8 +7,8 @@
  * @link      https://github.com/MarcinOrlowski/crypto-tracker-plasmoid
  */
 
-import QtQuick 2.1
-import QtQuick.Layouts 1.1
+import QtQuick 2.15
+import QtQuick.Layouts 1.15
 import org.kde.plasma.components 3.0 as PlasmaComponents
 import org.kde.plasma.core 2.0 as PlasmaCore
 import "../js/crypto.js" as Crypto
@@ -23,7 +23,6 @@ GridLayout {
     Layout.fillWidth: true
 
     property var json: undefined
-
     property string exchange: ''
     property string crypto: ''
     property bool hideCryptoLogo: false
@@ -32,21 +31,17 @@ GridLayout {
     property string customLocaleName: ''
     property int refreshRate: 5
     property bool hidePriceDecimals: false
-
     property bool showPriceChangeMarker: true
     property bool showTrendingMarker: true
-    property int trendingTimeSpan: 60          // minutes
-
+    property int trendingTimeSpan: 60
     property bool flashOnPriceRaise: true
     property string flashOnPriceRaiseColor: '#78c625'
     property bool flashOnPriceDrop: true
     property string flashOnPriceDropColor: '#ff006e'
-
     property string markerColorPriceRaise: '#78c625'
     property string markerColorPriceDrop: '#ff006e'
 
-    // --------------------------------------------------------------------------------------------
-
+    // Initialize properties from JSON
     Component.onCompleted: {
         if (json !== undefined) {
             exchange = json.exchange
@@ -57,11 +52,9 @@ GridLayout {
             hidePriceDecimals = json.hidePriceDecimals
             useCustomLocale = json.useCustomLocale
             customLocaleName = json.customLocaleName
-
             showPriceChangeMarker = json.showPriceChangeMarker
             showTrendingMarker = json.showTrendingMarker
             trendingTimeSpan = json.trendingTimeSpan
-
             flashOnPriceRaise = json.flashOnPriceRaise
             flashOnPriceRaiseColor = json.flashOnPriceRaiseColor
             flashOnPriceDrop = json.flashOnPriceDrop
@@ -71,98 +64,58 @@ GridLayout {
         }
     }
 
-    // --------------------------------------------------------------------------------------------
-
-    onExchangeChanged: {
-        invalidateExchangeData();
-        fetchRate(exchange, crypto, pair)
-    }
-    onCryptoChanged: {
-        invalidateExchangeData();
-        fetchRate(exchange, crypto, pair)
-    }
-    onPairChanged: {
-        invalidateExchangeData();
-        fetchRate(exchange, crypto, pair)
-    }
-
-    // --------------------------------------------------------------------------------------------
+    // React to property changes
+    onExchangeChanged: fetchRate(exchange, crypto, pair)
+    onCryptoChanged: fetchRate(exchange, crypto, pair)
+    onPairChanged: fetchRate(exchange, crypto, pair)
 
     function getDirectionColor(direction, colorUp, colorDown) {
-        var color = '#ffffff'
-        switch(direction) {
-            case +1:
-                color = colorUp
-                break
-            case -1:
-                color = colorDown
-                break
-        }
-        return color
+        return (direction === +1) ? colorUp : (direction === -1) ? colorDown : '#ffffff'
     }
 
-    // --------------------------------------------------------------------------------------------
-
-	property var lastTrendingUpdateStamp: 0
-	property var lastTrendingRate: 0
-	property int trendingDirection: 0		// -1, 0, 1
+    property var lastTrendingUpdateStamp: 0
+    property var lastTrendingRate: 0
+    property int trendingDirection: 0
     property bool trendingCalculated: false
 
     function invalidateExchangeData() {
         lastTrendingUpdateStamp = 0
-        lastTrendingRate: 0
+        lastTrendingRate = 0
         trendingDirection = 0
         trendingCalculated = false
-
         currentRate = 0
         currentRateValid = false
         lastRate = 0
         lastRateValid = false
-
         rateChangeDirection = 0
         rateChangeDirectionCalculated = false
     }
 
-	function updateTrending(rate) {
-		var now = new Date()
-		var updateTrending = false
-		if (lastTrendingUpdateStamp != 0) {
-			if ((now.getTime() - lastTrendingUpdateStamp) >= (trendingTimeSpan * 60 * 1000)) {
-				if (rate > lastTrendingRate) {
-					trendingDirection = 1
-				} else if (currentRate < lastTrendingRate) {
-					trendingDirection = -1
-				} else {
-					trendingDirection = 0
-				}
-				updateTrending = true
-                trendingCalculated = true
-			}
-		}
+    function updateTrending(rate) {
+        var now = new Date()
+        var updateTrending = false
+        if (lastTrendingUpdateStamp !== 0 && (now.getTime() - lastTrendingUpdateStamp) >= (trendingTimeSpan * 60 * 1000)) {
+            trendingDirection = (rate > lastTrendingRate) ? 1 : (rate < lastTrendingRate) ? -1 : 0
+            updateTrending = true
+            trendingCalculated = true
+        }
 
-		if (lastTrendingUpdateStamp == 0 || updateTrending) {
-			lastTrendingUpdateStamp = now.getTime()
-			lastTrendingRate = rate
-		}
-	}
+        if (lastTrendingUpdateStamp === 0 || updateTrending) {
+            lastTrendingUpdateStamp = now.getTime()
+            lastTrendingRate = rate
+        }
+    }
 
     function getTrendingMarkerText() {
-        // https://unicode-table.com/en/sets/arrow-symbols/
         var color = getDirectionColor(trendingDirection, markerColorPriceRaise, markerColorPriceDrop)
         var rateText = ''
         if (trendingCalculated && (trendingDirection !== 0)) {
-            // ↑ Upwards Arrow U+2191
             rateText += '<span style="color: ' + color + ';">'
-            if (trendingDirection == +1) rateText += '↑'
-            // ↓ Downwards Arrow U+2193
-            if (trendingDirection == -1) rateText += '↓'
+            rateText += (trendingDirection === +1) ? '↑' : (trendingDirection === -1) ? '↓' : ''
             rateText += '</span> '
         }
-
         return rateText
     }
-
-    // --------------------------------------------------------------------------------------------
 
     MouseArea {
         id: mouseArea
@@ -175,77 +128,48 @@ GridLayout {
         }
     }
 
-    // --------------------------------------------------------------------------------------------
-
     function getRateChangeMarkerText() {
-        // echange rate change direction
-        // • Bullet black small circle U+2022
         var color = getDirectionColor(rateChangeDirection, markerColorPriceRaise, markerColorPriceDrop)
         var rateText = ''
         if (rateChangeDirection !== 0) {
-            // ▲ Black Up-Pointing Triangle U+25B2
             rateText += ' <span style="color: ' + color + ';">'
-            if (rateChangeDirection == +1) rateText += '▲'
-            // ▼ Black Down-Pointing Triangle U+25BC
-            if (rateChangeDirection == -1) rateText += '▼'
+            rateText += (rateChangeDirection === +1) ? '▲' : (rateChangeDirection === -1) ? '▼' : ''
             rateText += '</span>'
         }
-
         return rateText
     }
 
     function getCurrentRateText() {
         if (!currentRateValid) return '---'
-
-        var color = '#0000ff'
-
-        var rate = currentRate
-        if(hidePriceDecimals) rate = Math.round(rate)
-
-        var rateText = ''
+        var rate = hidePriceDecimals ? Math.round(currentRate) : currentRate
         var localeName = useCustomLocale ? customLocaleName : ''
-        var tmp = Number(rate).toLocaleCurrencyString(Qt.locale(localeName), Crypto.getCurrencySymbol(pair))
-        if(hidePriceDecimals) tmp = tmp.replace(Qt.locale(localeName).decimalPoint + '00', '')
-        rateText += '<span>' + tmp + '</span>'
-
-        return rateText
+        var rateText = Number(rate).toLocaleCurrencyString(Qt.locale(localeName), Crypto.getCurrencySymbol(pair))
+        return hidePriceDecimals ? rateText.replace(Qt.locale(localeName).decimalPoint + '00', '') : rateText
     }
 
-    // --------------------------------------------------------------------------------------------
-
-    // must be first item in the layout hierarchy to stay behind all other elements
     Rectangle {
         id: bgWall
         anchors.fill: parent
         opacity: 0
     }
 
-	Timer {
+    Timer {
         id: bgWallFadeTimer
         interval: 100
-		running: false
-		repeat: true
-		triggeredOnStart: false
-		onTriggered: {
+        running: false
+        repeat: true
+        triggeredOnStart: false
+        onTriggered: {
             bgWall.opacity = (bgWall.opacity > 0) ? (bgWall.opacity -= 0.1) : 0
             running = (bgWall.opacity !== 0)
         }
-	}
-
-    // --------------------------------------------------------------------------------------------
+    }
 
     Image {
         id: cryptoIcon
         visible: !hideCryptoLogo
-
         width: 20
         height: 20
-        Layout.minimumWidth: 20
-        Layout.minimumHeight: 20
-        Layout.maximumWidth: 20
-        Layout.maximumHeight: 20
-        // Layout.alignment: Qt.AlignHCenter
-        // fillMode: Image.PreserveAspectFit
         source: plasmoid.file('', 'images/' + Crypto.getCryptoIcon(crypto))
     }
 
@@ -253,115 +177,48 @@ GridLayout {
         visible: showTrendingMarker
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter
-
         Layout.alignment: Qt.AlignHCenter
-        // Layout.fillWidth: true
         height: 20
         textFormat: Text.RichText
         fontSizeMode: Text.Fit
-        // minimumPixelSize: bitcoinIcon.width * 0.7
         minimumPixelSize: 8
-        // font.pixelSize: 12
         text: getTrendingMarkerText()
     }
 
     PlasmaComponents.Label {
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter
-
         Layout.alignment: Qt.AlignHCenter
-        // Layout.fillWidth: true
         height: 20
-
         textFormat: Text.RichText
         fontSizeMode: Text.Fit
-        // minimumPixelSize: bitcoinIcon.width * 0.7
         minimumPixelSize: 8
-        // font.pixelSize: 12
         text: getCurrentRateText()
     }
 
     PlasmaComponents.Label {
         visible: showPriceChangeMarker
-
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter
-
         Layout.alignment: Qt.AlignHCenter
-        // Layout.fillWidth: true
         height: 16
-
         textFormat: Text.RichText
         fontSizeMode: Text.Fit
-        // minimumPixelSize: bitcoinIcon.width * 0.7
         minimumPixelSize: 8
-        // font.pixelSize: 12
         text: getRateChangeMarkerText()
     }
-
-    // --------------------------------------------------------------------------------------------
-
-    property var lastUpdateMillis: 0
-    property bool currentRateValid: false
-    property var currentRate: 0
-    property bool lastRateValid: false
-    property var lastRate: 0
-    property int rateChangeDirection: 0             // -1, 0, 1
-    property bool rateChangeDirectionCalculated: false
-
-    property bool rateDirectionChanged: false
-    onRateDirectionChangedChanged: {
-        // console.debug('changed: ' + rateChangeDirection)
-        if (rateChangeDirectionCalculated && (rateChangeDirection !== 0)) {
-            var flash = false
-
-            if (rateChangeDirection === +1 && flashOnPriceRaise) flash = true
-            if (rateChangeDirection === -1 && flashOnPriceDrop) flash = true
-
-            if (flash) {
-                bgWall.color = getDirectionColor(rateChangeDirection, flashOnPriceRaiseColor, flashOnPriceDropColor)
-                bgWall.opacity = 1
-                bgWallFadeTimer.running = true
-                bgWallFadeTimer.start()
-            }
-        }
-    }
-
-	Timer {
-		interval: refreshRate * 60 * 1000
-		running: true
-		repeat: true
-		triggeredOnStart: true
-		onTriggered: fetchRate(exchange, crypto, pair)
-	}
-
-    // --------------------------------------------------------------------------------------------
 
     property bool dataDownloadInProgress: false
     function fetchRate(exchange, crypto, pair) {
         if (dataDownloadInProgress) return
-
-        if (!Crypto.exchangeExists(exchange)) {
-            if (exchange !== '') console.debug("fetchRate(): unknown exchange: '" + exchange + "'")
-            return
-        }
-        if (!Crypto.isCryptoSupported(exchange, crypto)) {
-            if (crypto !== '') console.debug("fetchRate(): unsupported crypto: '" + crypto + "' on exchange: '" + exchange + "'")
-            return
-        }
-        if (!Crypto.isPairSupported(exchange, crypto, pair)) {
-            if (pair !== '')
-            console.debug("fetchRate(): unsupported pair: '" + pair + "' for crypto: '" + crypto + "' on exchange: '" + exchange + "'")
-            return
-        }
-        dataDownloadInProgress = true;
-
-        // console.debug(`fetchRate(): ex: ${exchange}, crypto: ${crypto}, pair: ${pair}`)
+        if (!Crypto.exchangeExists(exchange)) return
+        if (!Crypto.isCryptoSupported(exchange, crypto)) return
+        if (!Crypto.isPairSupported(exchange, crypto, pair)) return
+        dataDownloadInProgress = true
 
         downloadExchangeRate(exchange, crypto, pair, function(rate) {
             var now = new Date()
             lastUpdateMillis = now.getTime()
-
             if (currentRateValid) {
                 lastRate = currentRate
                 lastRateValid = true
@@ -371,57 +228,40 @@ GridLayout {
 
             if (lastRateValid) {
                 var lastRateChangeDirection = rateChangeDirection
-                if (currentRate > lastRate) {
-                    rateChangeDirection = 1
-                } else if (currentRate < lastRate) {
-                    rateChangeDirection = -1
-                } else {
-                    rateChangeDirection = 0
-                }
+                rateChangeDirection = (currentRate > lastRate) ? 1 : (currentRate < lastRate) ? -1 : 0
                 rateDirectionChanged = (lastRateChangeDirection !== rateChangeDirection)
                 rateChangeDirectionCalculated = true
             }
 
             updateTrending(currentRate)
-        });
+        })
     }
-
-    // --------------------------------------------------------------------------------------------
 
     function downloadExchangeRate(exchangeId, crypto, pair, callback) {
         var exchange = Crypto.exchanges[exchangeId]
         var url = exchange.api_url.replace('{crypto}', crypto).replace('{pair}', pair)
-
-        // console.debug(`Download url: '${url}'`)
-
         request(url, function(data) {
-            if(data.length !== 0) {
+            if (data.length !== 0) {
                 try {
                     var json = JSON.parse(data)
                     callback(exchange.getRateFromExchangeData(json, crypto, pair))
                 } catch (error) {
-                    console.error("downloadExchangeRate(): Response parsing failed for '" + url + "'")
-                    console.error("downloadExchangeRate(): error: '" + error + "'")
-                    console.error("downloadExchangeRate(): data: '" + data + "'")
+                    console.error("Download failed for URL: " + url)
                 }
             }
             tickerRoot.opacity = 1
             dataDownloadInProgress = false
         })
-        return true
     }
 
     function request(url, callback) {
         var xhr = new XMLHttpRequest()
         xhr.onreadystatechange = function() {
-            if(xhr.readyState === 4) {
+            if (xhr.readyState === 4) {
                 callback(xhr.responseText)
             }
         }
         xhr.open('GET', url, true)
         xhr.send('')
     }
-
-    // --------------------------------------------------------------------------------------------
-
 }

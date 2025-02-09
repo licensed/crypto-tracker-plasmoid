@@ -7,7 +7,7 @@
  * @link      https://github.com/MarcinOrlowski/crypto-tracker-plasmoid
  */
 
-import QtQuick 2.0
+import QtQuick 2.15
 
 ListModel {
     id: exchangeModel

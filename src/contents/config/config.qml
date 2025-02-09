@@ -7,23 +7,29 @@
  * @link      https://github.com/MarcinOrlowski/crypto-tracker-plasmoid
  */
 
-import QtQuick 2.0
-import org.kde.plasma.configuration 2.0
+import QtQuick 2.15
+import QtQuick.Controls 6.0
+import QtQuick.Layouts 1.15
+import org.kde.kirigami 2.20 as Kirigami
 
-ConfigModel {
-	ConfigCategory {
-		name: i18n("Exchanges")
-		icon: "taxes-finances"
-		source: "config/Exchanges.qml"
-	}
-	ConfigCategory {
-		name: i18n("Layout")
-		icon: "window"
-		source: "config/Layout.qml"
-	}
-	ConfigCategory {
-		name: i18n("About")
-		icon: "view-visible"
-		source: "config/About.qml"
-	}
+Kirigami.SettingsCategory {
+    id: configRoot
+    categoryList.model: ListModel {
+        ListElement {
+            name: i18n("Exchanges")
+            icon: "taxes-finances"
+            source: "config/Exchanges.qml"
+        }
+        ListElement {
+            name: i18n("Layout")
+            icon: "window"
+            source: "config/Layout.qml"
+        }
+        ListElement {
+            name: i18n("About")
+            icon: "view-visible"
+            source: "config/About.qml"
+        }
+    }
 }
+

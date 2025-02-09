@@ -7,49 +7,46 @@
  * @link      https://github.com/MarcinOrlowski/crypto-tracker-plasmoid
  */
 
-import QtQuick 2.1
-import QtQuick.Layouts 1.1
-import QtQuick.Controls 2.3
-import org.kde.plasma.components 3.0 as PlasmaComponents
+import QtQuick 2.15
+import QtQuick.Layouts 1.15
+import QtQuick.Controls 2.15
+import org.kde.plasma.extras 2.0 as PlasmaExtras
 import "../js/meta.js" as Meta
 
 ColumnLayout {
-	id: aboutMainContainer
+    id: aboutMainContainer
 
-	anchors.centerIn: parent
-	Layout.fillWidth: true
-	Layout.fillHeight: true
-	Layout.margins: 30
+    anchors.centerIn: parent
+    Layout.fillWidth: true
+    Layout.fillHeight: true
+    Layout.margins: 30
 
-	Image {
-		id: aboutLogo
-		Layout.alignment: Qt.AlignHCenter
-		fillMode: Image.PreserveAspectFit
-		source: plasmoid.file('', 'images/logo.png')
-	}
+    Image {
+        id: aboutLogo
+        Layout.alignment: Qt.AlignHCenter
+        fillMode: Image.PreserveAspectFit
+        source: plasmoid.file("", "images/logo.png")
+    }
 
-	// metadata access is not available until very recent Plasma
-	// so as a work around we have it auto-generated as JS file
-	PlasmaComponents.Label {
-		Layout.alignment: Qt.AlignHCenter
-		textFormat: Text.PlainText
-		font.bold: true
-		font.pixelSize: Qt.application.font.pixelSize * 1.5
-		text: Meta.title + ' v' + Meta.version
-	}
+    PlasmaExtras.Label {
+        Layout.alignment: Qt.AlignHCenter
+        textFormat: Text.PlainText
+        font.bold: true
+        font.pixelSize: Qt.application.font.pixelSize * 1.5
+        text: Meta.title + " v" + Meta.version
+    }
 
-	CopyrightLabel {
-		Layout.alignment: Qt.AlignHCenter
-	}
+    CopyrightLabel {
+        Layout.alignment: Qt.AlignHCenter
+    }
 
-	Item {
-		height: 20
-	}
+    Item {
+        height: 20
+    }
 
-	ClickableLabel {
-		Layout.alignment: Qt.AlignHCenter
-		text: i18n('Visit <u>project page</u> on Github')
-		url: Meta.url
-	}
-
-} // aboutMainContainer
+    ClickableLabel {
+        Layout.alignment: Qt.AlignHCenter
+        text: i18n("Visit <u>project page</u> on Github")
+        url: Meta.url
+    }
+}

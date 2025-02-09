@@ -7,234 +7,186 @@
  * @link      https://github.com/MarcinOrlowski/crypto-tracker-plasmoid
  */
 
-import QtQuick 2.1
-import QtQuick.Controls 1.4 as QtControls
-import QtQuick.Dialogs 1.2
-import QtQuick.Layouts 1.1
-import org.kde.plasma.components 3.0 as PlasmaComponents
+import QtQuick 2.15
+import QtQuick.Controls 2.15
+import QtQuick.Dialogs 1.3
+import QtQuick.Layouts 1.15
+import org.kde.kirigami 2.20 as Kirigami
 import "../../js/crypto.js" as Crypto
 import ".."
 
 Item {
-	id: configExchanges
+    id: configExchanges
 
-	Layout.fillWidth: true
+    Layout.fillWidth: true
 
-	property alias cfg_exchanges: serializedExchanges.text
+    property alias cfg_exchanges: serializedExchanges.text
 
-	Text {
-		id: serializedExchanges
-		visible: false
-		onTextChanged: {
-			exchangesModel.clear()
-			JSON.parse(serializedExchanges.text).forEach(
-				ex => exchangesModel.append(ex)
-			)
-		}
-	}
+    Text {
+        id: serializedExchanges
+        visible: false
+        onTextChanged: {
+            exchangesModel.clear()
+            JSON.parse(serializedExchanges.text).forEach(
+                ex => exchangesModel.append(ex)
+            )
+        }
+    }
 
-	ExchangeModel {
-		id: exchangesModel
-	}
+    ListModel {
+        id: exchangesModel
+    }
 
-	RowLayout {
-		anchors.fill: parent
+    RowLayout {
+        anchors.fill: parent
 
-		Layout.alignment: Qt.AlignTop | Qt.AlignRight
+        Layout.alignment: Qt.AlignTop | Qt.AlignRight
 
-		QtControls.TableView {
-			id: exchangesTable
-			model: exchangesModel
-			Layout.fillWidth: true
+        TableView {
+            id: exchangesTable
+            model: exchangesModel
+            Layout.fillWidth: true
+            selectionModel: ItemSelectionModel {}
 
-			sortIndicatorVisible: true
+            columnSpacing: 10
+            rowSpacing: 5
 
-			anchors.top: parent.top
-			anchors.right: tableActionButtons.left
-			anchors.bottom: parent.bottom
-			anchors.left: parent.left
-			anchors.rightMargin: 10
+            delegate: Item {
+                Kirigami.Label {
+                    text: {
+                        if ((model.index >= 0) && (model.display !== '')) {
+                            switch (model.column) {
+                                case 0: {
+                                    var ex = exchangesModel.get(model.index)
+                                    var res = ex['enabled'] ? '' : '(L) '
+                                    return res + Crypto.getExchangeName(ex['exchange'])
+                                }
+                                case 1: return Crypto.getCryptoName(model.display)
+                                case 2: return Crypto.getCurrencyName(model.display)
+                            }
+                        }
+                        return '??? row/col: ' + model.index + '/' + model.column + ' val: ' + model.display
+                    }
+                }
+            }
 
-			itemDelegate: Item {
-				PlasmaComponents.Label {
-					text: {
-						if ((styleData.row >= 0) && (styleData.value !== '')) {
-							switch (styleData.column) {
-								case 0: {
-									var ex = exchangesModel.get(styleData.row)
-									var res = ex['enabled'] ? '' : '(L) '
-									return res + Crypto.getExchangeName(ex['exchange'])
-								}
-								case 1: return Crypto.getCryptoName(styleData.value)
-								case 2: return Crypto.getCurrencyName(styleData.value)
-							}
-						}
-						return '??? row/col: ' + styleData.row + '/' + styleData.column + ' val: ' + styleData.value
-					}
-				}
-			}
+            TableViewColumn {
+                role: "exchange"
+                title: "Exchange"
+            }
+            TableViewColumn {
+                role: "crypto"
+                title: "Crypto"
+            }
+            TableViewColumn {
+                role: "pair"
+                title: "Pair"
+            }
 
-			QtControls.TableViewColumn {
-				role: "exchange"
-				title: "Exchange"
-			}
-			QtControls.TableViewColumn {
-				role: "crypto"
-				title: "Crypto"
-			}
-			QtControls.TableViewColumn {
-				role: "pair"
-				title: "Pair"
-			}
+            onDoubleClicked: editExchange(exchangesTable.selectionModel.currentIndex.row)
+        }
 
-			onDoubleClicked: editExchange(exchangesTable.currentRow)
-		} // TableView
+        ColumnLayout {
+            id: tableActionButtons
+            anchors.top: parent.top
 
-		ColumnLayout {
-			id: tableActionButtons
-			anchors.top: parent.top
+            Button {
+                text: i18n("Add")
+                icon.name: "list-add"
+                onClicked: addExchange()
+            }
 
-			PlasmaComponents.Button {
-				text: i18n("Add")
-				icon.name: "list-add"
-				onClicked: addExchange()
-			}
+            Button {
+                text: i18n("Edit")
+                icon.name: "edit-entry"
+                onClicked: editExchange(exchangesTable.selectionModel.currentIndex.row)
+                enabled: exchangesTable.selectionModel.hasSelection
+            }
 
-			PlasmaComponents.Button {
-				text: i18n("Edit")
-				icon.name: "edit-entry"
-				onClicked: editExchange(exchangesTable.currentRow)
-				enabled: {
-					// TableView seem to have a bug that makes it think row 0 is selected
-					// even if there's no data in model and table view is empty. So we need
-					// to check for that case here.
-					var idx = exchangesTable.currentRow
-					return (idx !== -1) && (idx < exchangesModel.count)
-				}
-			}
+            Button {
+                text: i18n("Remove")
+                icon.name: "list-remove"
+                onClicked: removeExchange(exchangesTable.selectionModel.currentIndex.row)
+                enabled: exchangesTable.selectionModel.hasSelection
+            }
 
-			PlasmaComponents.Button {
-				text: i18n("Remove")
-				icon.name: "list-remove"
-				onClicked: removeExchange(exchangesTable.currentRow)
-				enabled: {
-					// TableView seem to have a bug that makes it think row 0 is selected
-					// even if there's no data in model and table view is empty. So we need
-					// to check for that case here.
-					var idx = exchangesTable.currentRow
-					return (idx !== -1) && (idx < exchangesModel.count)
-				}
-			}
+            Button {
+                text: i18n("Move Up")
+                icon.name: "arrow-up"
+                onClicked: moveExchange(-1)
+                enabled: exchangesTable.selectionModel.currentIndex.row > 0
+            }
 
-			PlasmaComponents.Button {
-				text: i18n("Move Up")
-				icon.name: "arrow-up"
-				onClicked: {
-					var from = exchangesTable.currentRow
-					var to = from -1
-					exchangesTable.selection.clear()
-					exchangesModel.move(from, to, 1)
-					exchangesTable.selection.select(to)
-					saveExchanges()
-				}
-				enabled: {
-					// TableView seem to have a bug that makes it think row 0 is selected
-					// even if there's no data in model and table view is empty. So we need
-					// to check for that case here.
-					var idx = exchangesTable.currentRow
-					return (idx > 0) && (idx < exchangesModel.count)
-				}
-			}
+            Button {
+                text: i18n("Move Down")
+                icon.name: "arrow-down"
+                onClicked: moveExchange(1)
+                enabled: exchangesTable.selectionModel.currentIndex.row < exchangesModel.count - 1
+            }
+        }
+    }
 
-			PlasmaComponents.Button {
-				text: i18n("Move Down")
-				icon.name: "arrow-down"
-				onClicked: {
-					var from = exchangesTable.currentRow
-					var to = from+1
-					exchangesTable.selection.clear()
-					exchangesModel.move(from, to, 1)
-					exchangesTable.selection.select(to)
-					saveExchanges()
-				}
-				enabled: {
-					// TableView seem to have a bug that makes it think row 0 is selected
-					// even if there's no data in model and table view is empty. So we need
-					// to check for that case here.
-					var idx = exchangesTable.currentRow
-					return (idx !== -1) && ((idx+1) < exchangesModel.count)
-				}
-			}
+    property int selectedRow: -1
 
+    function saveExchanges() {
+        var exchanges = []
+        for (var i = 0; i < exchangesModel.count; i++) {
+            exchanges.push(exchangesModel.get(i))
+        }
+        serializedExchanges.text = JSON.stringify(exchanges)
+    }
 
-		} // ColumnLayout
-	} // RowLayout
+    function addExchange() {
+        exchange.init()
+        selectedRow = -1
+        exchangeEditDialog.open()
+    }
 
-	// ------------------------------------------------------------------------------------------------------------------------
+    function editExchange(idx) {
+        if (idx === -1 || idx >= exchangesModel.count) return
 
-	property int selectedRow: -1
+        exchange.fromJson(exchangesModel.get(idx))
+        selectedRow = idx
+        exchangeEditDialog.open()
+    }
 
-	function saveExchanges() {
-		var exchanges = []
-		for(var i=0; i<exchangesModel.count; i++) {
-			exchanges.push(exchangesModel.get(i))
-		}
-		serializedExchanges.text = JSON.stringify(exchanges)
-	}
+    function removeExchange(idx) {
+        if (idx === -1 || idx >= exchangesModel.count) return
 
-	function addExchange() {
-		exchange.init()
-		selectedRow = -1
-		exchangeEditDialog.visible = true
-	}
+        exchangesModel.remove(idx)
+        saveExchanges()
+    }
 
-	function editExchange(idx) {
-		if (idx === -1) return
+    function moveExchange(direction) {
+        var from = exchangesTable.selectionModel.currentIndex.row
+        var to = from + direction
+        if (to < 0 || to >= exchangesModel.count) return
 
-		// TableView seem to have a bug that makes it think row 0 is selected
-		// even if there's no data in model and table view is empty. So we need
-		// to check for that case here.
-		if ((idx+1) > exchangesModel.count) return
+        var item = exchangesModel.get(from)
+        exchangesModel.remove(from)
+        exchangesModel.insert(to, item)
+        exchangesTable.selectionModel.setCurrentIndex(to)
+        saveExchanges()
+    }
 
-		exchange.fromJson(exchangesModel.get(idx))
+    Dialog {
+        id: exchangeEditDialog
+        title: i18n("Exchange")
+        standardButtons: Dialog.Ok | Dialog.Cancel
 
-		selectedRow = idx
-		exchangeEditDialog.visible = true
-	}
+        onAccepted: {
+            var ex = exchange.toJson()
+            if (selectedRow === -1) {
+                exchangesModel.append(ex)
+            } else {
+                exchangesModel.set(selectedRow, ex)
+            }
+            saveExchanges()
+        }
 
-	function removeExchange(idx) {
-		if (idx === -1) return
+        ExchangeConfig {
+            id: exchange
+        }
+    }
+}
 
-		// TableView seem to have a bug that makes it think row 0 is selected
-		// even if there's no data in model and table view is empty. So we need
-		// to check for that case here.
-		if ((idx+1) > exchangesModel.count) return
-
-		exchangesTable.model.remove(idx)
-		saveExchanges()
-	}
-
-	// ------------------------------------------------------------------------------------------------------------------------
-
-	Dialog {
-		id: exchangeEditDialog
-		visible: false
-		title: i18n("Exchange")
-		standardButtons: StandardButton.Save | StandardButton.Cancel
-
-		onAccepted: {
-			var ex = exchange.toJson()
-			if (selectedRow === -1) {
-				exchangesModel.append(ex)
-			} else {
-				exchangesModel.set(selectedRow, ex)
-			}
-			saveExchanges();
-		}
-
-		ExchangeConfig {
-			id: exchange
-		}
-	}
-
-} // Item

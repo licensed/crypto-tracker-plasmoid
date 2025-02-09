@@ -7,21 +7,20 @@
  * @link      https://github.com/MarcinOrlowski/crypto-tracker-plasmoid
  */
 
-import QtQuick 2.1
-import QtQuick.Layouts 1.1
-import QtQuick.Controls 2.3
-import QtQuick.Dialogs 1.3
+import QtQuick 2.15
+import QtQuick.Layouts 1.15
+import QtQuick.Controls 2.15
 
 Dialog {
-	visible: false
-	title: i18n('Information')
-	standardButtons: StandardButton.Ok
+    visible: false
+    title: i18n("Information")
+    standardButtons: Dialog.Ok
 
-	width: 600
-	height: 500
-	Layout.minimumWidth: 600
-	Layout.minimumHeight: 500
+    width: 600
+    height: 500
+    Layout.minimumWidth: 600
+    Layout.minimumHeight: 500
 
-	AppInfo { }
+    AppInfo { }
+}
 
-} // Dialog

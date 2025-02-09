@@ -16,43 +16,43 @@ import org.kde.plasma.plasmoid 2.0
 import "../js/meta.js" as Meta
 
 Item {
-	id: root
+    id: root
 
-	Component.onCompleted: {
-		plasmoid.setAction("showAboutDialog", i18n('About %1…', Meta.title));
-		plasmoid.setAction("checkUpdateAvailability", i18n("Check update…"));
-	}
+    Component.onCompleted: {
+        plasmoid.setAction("showAboutDialog", i18n('About %1…', Meta.title))
+        plasmoid.setAction("checkUpdateAvailability", i18n("Check update…"))
+    }
 
-	function action_checkUpdateAvailability() {
-		updateChecker.checkUpdateAvailability(true)
-	}
+    function action_checkUpdateAvailability() {
+        updateChecker.checkUpdateAvailability(true)
+    }
 
-	function action_showAboutDialog() {
-		aboutDialog.visible = true
-	}
-	AboutDialog {
-		id: aboutDialog
-	}
+    function action_showAboutDialog() {
+        aboutDialog.visible = true
+    }
 
-	// ------------------------------------------------------------------------------------------------------------------------
+    AboutDialog {
+        id: aboutDialog
+    }
 
-	Plasmoid.preferredRepresentation: Plasmoid.compactRepresentation
-	Plasmoid.compactRepresentation: ExchangeContainer {}
+    // ------------------------------------------------------------------------------------------------------------------------
 
-	// If ConfigurableBackground is set, the we most likely run on Plasma 5.19+ and if so, we prefer using
-	// widget's background control features instead.
-	Plasmoid.backgroundHints: (typeof PlasmaCore.Types.ConfigurableBackground !== "undefined"
-		? PlasmaCore.Types.DefaultBackground | PlasmaCore.Types.ConfigurableBackground
-		: plasmoid.configuration.containerLayoutTransparentBackgroundEnabled ? PlasmaCore.Types.NoBackground : PlasmaCore.Types.DefaultBackground
-	)
+    Plasmoid.preferredRepresentation: Plasmoid.compactRepresentation
+    Plasmoid.compactRepresentation: ExchangeContainer {}
 
-	// ------------------------------------------------------------------------------------------------------------------------
+    // ------------------------------------------------------------------------------------------------------------------------
 
-	UpdateChecker {
-		id: updateChecker
+    Plasmoid.backgroundHints: (typeof PlasmaCore.Types.ConfigurableBackground !== "undefined"
+        ? PlasmaCore.Types.DefaultBackground | PlasmaCore.Types.ConfigurableBackground
+        : plasmoid.configuration.containerLayoutTransparentBackgroundEnabled ? PlasmaCore.Types.NoBackground : PlasmaCore.Types.DefaultBackground
+    )
 
-		// once per 7 days
-		checkInterval: (((1000*60)*60)*24*7)
-	}
+    // ------------------------------------------------------------------------------------------------------------------------
 
-} // root
+    UpdateChecker {
+        id: updateChecker
+
+        // Check once every 7 days
+        checkInterval: (((1000 * 60) * 60) * 24 * 7)
+    }
+}

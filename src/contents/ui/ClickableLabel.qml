@@ -7,26 +7,29 @@
  * @link      https://github.com/MarcinOrlowski/crypto-tracker-plasmoid
  */
 
-import QtQuick 2.0
+import QtQuick 2.15
+import org.kde.plasma.core 2.0 as PlasmaCore
 import org.kde.plasma.components 3.0 as PlasmaComponents
 
 PlasmaComponents.Label {
-	// URL to open once the label is clicked.
-	property string url: ""
+    // URL to open once the label is clicked.
+    property string url: ""
 
-	// Optional label to be shown. If not provided, URL will be used as label.
-	text: url
+    // Optional label to be shown. If not provided, URL will be used as label.
+    text: url
 
- 	textFormat: Text.RichText
-	MouseArea {
-		anchors.fill: parent
-		onClicked: {
-			if (url !== "") {
-				Qt.openUrlExternally(url)
-			} else {
-				console.debug('No URL provided.')
-			}
-		}
-	}
+    textFormat: Text.RichText
+
+    MouseArea {
+        anchors.fill: parent
+        onClicked: {
+            if (url !== "") {
+                PlasmaCore.Api.openUrlExternally(url)
+            } else {
+                console.debug('No URL provided.')
+            }
+        }
+    }
 }
+
 

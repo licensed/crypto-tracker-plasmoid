@@ -14,37 +14,35 @@ import org.kde.plasma.components 3.0 as PlasmaComponents
 import "../js/crypto.js" as Crypto
 
 GridLayout {
-	readonly property bool vericalOrientation: plasmoid.formFactor == PlasmaCore.Types.Vertical
-	readonly property string defaultLocale: ''
-	property var exchanges: JSON.parse(plasmoid.configuration.exchanges).filter(ex => ex['enabled'])
+    readonly property bool verticalOrientation: plasmoid.formFactor == PlasmaCore.Types.Vertical
+    readonly property string defaultLocale: ''
+    property var exchanges: JSON.parse(plasmoid.configuration.exchanges).filter(ex => ex['enabled'])
 
-	// Lame trick to force re-evaluation. It's needed because if we reorder exchanges, then
-	// exchange count is unchanged, so (unless there's better way?) Repeater will not be 
-	// triggered and exchanges will not be redrawn in new order.
-	property int exchangeCount: 0
-	onExchangesChanged: {
-		exchangeCount = 0
-		exchangeCount = exchanges.length
-	}
-	
-	rows: (!plasmoid.configuration.customContainerLayoutEnabled) 
-			? (vericalOrientation ? exchangeCount : 1)
-			: plasmoid.configuration.containerLayoutRows
-	columns: (!plasmoid.configuration.customContainerLayoutEnabled)
-			? (vericalOrientation ? 1 : exchangeCount)
-			: plasmoid.configuration.containerLayoutColumns
+    // Forçar reavaliação quando as trocas forem alteradas
+    property int exchangeCount: 0
+    onExchangesChanged: {
+        exchangeCount = 0
+        exchangeCount = exchanges.length
+    }
 
-	PlasmaComponents.Label {
-		visible: exchanges.length === 0
-		Layout.alignment: Qt.AlignHCenter
-		text: i18n("Edit me!")
-	}
+    rows: (!plasmoid.configuration.customContainerLayoutEnabled) 
+        ? (verticalOrientation ? exchangeCount : 1)
+        : plasmoid.configuration.containerLayoutRows
+    columns: (!plasmoid.configuration.customContainerLayoutEnabled)
+        ? (verticalOrientation ? 1 : exchangeCount)
+        : plasmoid.configuration.containerLayoutColumns
 
-	Repeater {
-		model: exchangeCount
-		Exchange {
-			json: exchanges[index]
-		}
-	}
+    PlasmaComponents.Label {
+        visible: exchanges.length === 0
+        Layout.alignment: Qt.AlignHCenter
+        text: i18n("Edit me!")
+    }
 
-} // ColumnLayout
+    Repeater {
+        model: exchangeCount
+        Exchange {
+            json: exchanges[index]
+        }
+    }
+}
+
